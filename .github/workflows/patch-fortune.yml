@@ -1,0 +1,84 @@
+name: Patch fortune image layout
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch canvas layout and validate
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          start = s.find('function drawZodiacPage(page){')
+          marker = "notify('상세 운세 이미지 5장을 만드는 중입니다…');"
+          end = s.find(marker, start)
+          if start < 0 or end < 0:
+              raise SystemExit('drawZodiacPage block not found')
+          new = r'''function drawZodiacPage(page){
+ var p=setup(1080,3650),ctx=p.ctx;
+ ctx.fillStyle='#087d78';ctx.fillRect(55,45,970,155);
+ ctx.fillStyle='#e7c77e';ctx.font='600 14px '+mono;
+ ctx.fillText('DAILY ZODIAC  /  NAVER BLOG EDITORIAL',90,75);
+ ctx.fillStyle='#fff';ctx.font='400 32px '+font;
+ ctx.fillText('오늘의 12띠 운세 · '+d.replace(/-/g,'.'),90,112);
+ ctx.fillStyle='#d7eeeb';ctx.font='400 14px '+font;
+ ctx.fillText('종합운 · 금전운 · 연애운 · 건강운',90,157);
+ var first=page*3;
+ for(var n=0;n<3;n++){
+   var i=first+n,v=by[i],s=S[i],seed=d+':'+i,y=220+n*1120;
+   ctx.fillStyle='#fbfaf6';ctx.strokeStyle='#ddd9cf';ctx.lineWidth=2;
+   ctx.fillRect(55,y,970,1060);ctx.strokeRect(55,y,970,1060);
+   ctx.fillStyle='#087d78';ctx.font='700 30px '+font;
+   ctx.fillText(s[0]+'  '+s[1]+'  '+s[2],85,y+26);
+   ctx.fillStyle='#78918d';ctx.font='400 12px '+mono;
+   ctx.fillText(d.replace(/-/g,'.')+'  ·  오늘의 운세',85,y+67);
+   circle(ctx,170,y+145,50,v.o,'종합');
+   circle(ctx,390,y+145,50,v.m,'금전');
+   circle(ctx,610,y+145,50,v.l,'연애');
+   circle(ctx,830,y+145,50,v.h,'건강');
+   ctx.fillStyle='#efc36d';ctx.fillRect(85,y+215,3,48);
+   wrap(ctx,pick(O1,seed,201)+' '+pick(O4,seed,203),105,y+210,850,25,2,'400 17px '+font,'#58736f');
+   var sections=[
+     ['종합운',detailedOverall(seed)],
+     ['금전운',detailedMoney(seed)],
+     ['연애운',detailedLove(seed)],
+     ['건강운',detailedHealth(seed)]
+   ];
+   var yy=y+300;
+   for(var si=0;si<sections.length;si++){
+     ctx.fillStyle='#087d78';ctx.font='700 16px '+font;
+     ctx.fillText(sections[si][0],85,yy);
+     var used=wrap(ctx,sections[si][1],155,yy,805,27,4,'400 16px '+font,'#718783');
+     yy+=Math.max(92,used*27+17);
+   }
+ }
+ ctx.fillStyle='#83938f';ctx.font='400 10px '+mono;
+ ctx.fillText('※ 전통 천간·지지와 십이지 관계를 단순화한 오락·참고용 해석 / 과학적으로 검증된 예측이 아닙니다.',85,3605);
+ return p.c;
+}
+'''
+          s = s[:start] + new + s[end:]
+          # Extract inline JavaScript and validate it before committing.
+          js = re.search(r'<script>(.*?)</script>', s, re.S).group(1)
+          with tempfile.NamedTemporaryFile('w', suffix='.js', encoding='utf-8', delete=False) as f:
+              f.write(js); name=f.name
+          subprocess.run(['node','--check',name], check=True)
+          p.write_text(s, encoding='utf-8')
+          print('PATCH_OK')
+          PY
+      - name: Commit patched file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: compact fortune image layout"
+          git push
