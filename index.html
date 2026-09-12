@@ -17,7 +17,7 @@
     var imgEnd=s.indexOf("notify('상세 운세 이미지 5장을 만드는 중입니다…')",imgStart);
     if(imgStart<0||imgEnd<0)throw new Error('이미지 함수 위치를 찾지 못했습니다.');
     var newDraw=`function drawZodiacPage(page){
-      var p=setup(1080,3750),ctx=p.ctx;
+      var p=setup(1080,2700),ctx=p.ctx;
       ctx.fillStyle='#087d78';ctx.fillRect(55,45,970,155);
       ctx.fillStyle='#e7c77e';ctx.font='600 14px '+mono;
       ctx.fillText('DAILY ZODIAC  /  NAVER BLOG EDITORIAL',90,75);
@@ -25,11 +25,12 @@
       ctx.fillText('오늘의 12띠 운세 · '+d.replace(/-/g,'.'),90,112);
       ctx.fillStyle='#d7eeeb';ctx.font='400 14px '+font;
       ctx.fillText('종합운 · 금전운 · 연애운 · 건강운',90,157);
+
       var first=page*3;
       for(var n=0;n<3;n++){
-        var i=first+n,v=by[i],s=S[i],seed=d+':'+i,y=220+n*1120;
+        var i=first+n,v=by[i],s=S[i],seed=d+':'+i,y=220+n*790;
         ctx.fillStyle='#fbfaf6';ctx.strokeStyle='#ddd9cf';ctx.lineWidth=2;
-        ctx.fillRect(55,y,970,1060);ctx.strokeRect(55,y,970,1060);
+        ctx.fillRect(55,y,970,760);ctx.strokeRect(55,y,970,760);
         ctx.fillStyle='#087d78';ctx.font='700 30px '+font;
         ctx.fillText(s[0]+'  '+s[1]+'  '+s[2],85,y+26);
         ctx.fillStyle='#78918d';ctx.font='400 12px '+mono;
@@ -40,24 +41,31 @@
         circle(ctx,830,y+145,50,v.h,'건강');
         ctx.fillStyle='#efc36d';ctx.fillRect(85,y+215,3,48);
         wrap(ctx,pick(O1,seed,201)+' '+pick(O4,seed,203),105,y+210,850,25,2,'400 17px '+font,'#58736f');
-        var sections=[['종합운',detailedOverall(seed)],['금전운',detailedMoney(seed)],['연애운',detailedLove(seed)],['건강운',detailedHealth(seed)]];
+        var sections=[
+          ['종합운',detailedOverall(seed)],
+          ['금전운',detailedMoney(seed)],
+          ['연애운',detailedLove(seed)],
+          ['건강운',detailedHealth(seed)]
+        ];
         var yy=y+300;
         for(var si=0;si<sections.length;si++){
           ctx.fillStyle='#087d78';ctx.font='700 16px '+font;
           ctx.fillText(sections[si][0],85,yy);
-          var used=wrap(ctx,sections[si][1],155,yy,805,27,4,'400 16px '+font,'#718783');
-          yy+=Math.max(92,used*27+17);
+          var used=wrap(ctx,sections[si][1],155,yy,805,27,3,'400 16px '+font,'#718783');
+          yy+=Math.max(78,used*27+12);
         }
       }
-      // 면책 문구는 카드 테두리 아래의 별도 영역에 배치한다.
       ctx.fillStyle='#83938f';ctx.font='400 10px '+mono;
       ctx.textAlign='center';
-      ctx.fillText('※ 전통 천간·지지와 십이지 관계를 단순화한 오락·참고용 해석 / 과학적으로 검증된 예측이 아닙니다.',540,3660);
+      ctx.fillText('※ 전통 천간·지지와 십이지 관계를 단순화한 오락·참고용 해석 / 과학적으로 검증된 예측이 아닙니다.',540,2645);
+      ctx.textAlign='left';
       return p.c;
     }
     `;
     s=s.slice(0,imgStart)+newDraw+s.slice(imgEnd);
-    document.open();document.write(s);document.close();
+    document.open();
+    document.write(s);
+    document.close();
   }catch(e){
     document.body.innerHTML='<div style="font-family:Arial;padding:30px">운세 페이지를 불러오지 못했습니다.</div>';
     console.error(e);
